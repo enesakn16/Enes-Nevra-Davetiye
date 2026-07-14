@@ -1,58 +1,138 @@
 # BMI Calculator Pro
-A simple and user-friendly Body Mass Index (BMI) calculator app.
-## Description
-BMI Calculator Pro is an intuitive and easy-to-use mobile application that helps users quickly calculate their Body Mass Index (BMI). This app provides users with an insight into their body health by calculating BMI based on weight and height.
 
-### Features
-- Calculate BMI based on weight and height
-- Display BMI category (underweight, normal weight, overweight, obese)
-- User-friendly interface
-- Supports both metric and imperial units
+A Kotlin Android application for calculating Body Mass Index (BMI), classifying the result, storing the latest measurements, and presenting diet-oriented content through a Jetpack Compose interface.
 
-- ## Screenshots
-![Home Screen](rateus.jpeg)
-![Home1 Screen](homescreen.jpeg)
-![Past Screen](pastscreen.jpeg)
-![Diet Lists Screen](dietlists.jpeg)
-![Home1 Screen](profilescreen.jpeg)
+> This repository is developed with AI-assisted engineering. Product decisions, verification, review, and published changes remain human-directed.
 
-## Installation
-To get started with BMI Calculator Pro, follow these steps:
+## Current status
 
-1. **Clone the repository:**
-   ```sh
-   git clone https://github.com/your-username/BMI-Calculator-Pro.git
-   cd BMI-Calculator-Pro
-   ```markdown
-## Usage
-1. Open the BMI Calculator Pro app.
-2. Enter your weight, height and gender.
-3. Select the appropriate unit (kg/cm).
-4. Tap the "Calculate" button.
-5. View your BMI, health category and ideal kilogram.
-6. The history page saves the users' information and prints the last recorded information on the screen. (Like datetime,height,weight,ideal kg and BMI)
-7. Diet Lists Page: Users can find any diet list that they want to do.
-8. Profile: The profile part was made to be developed. If you want, you can add sections such as favorites, settings, and notifications.
+- Kotlin + Jetpack Compose Android application
+- Metric and imperial BMI calculation domain model
+- Unit tests for formulas, category boundaries, and invalid input
+- Automatic GitHub Actions verification on every push and pull request
+- Debug APK generated as a workflow artifact after successful pushes
 
-## Contributing
-We welcome contributions to BMI Calculator Pro! To contribute:
+## Features
 
-1. Fork the repository.
-2. Create a new branch: `git checkout -b my-new-feature`.
-3. Make your changes and commit them: `git commit -m 'Add some feature'`.
-4. Push to the branch: `git push origin my-new-feature`.
-5. Submit a pull request.
+- Calculate BMI from height and weight
+- Classify results as underweight, normal, overweight, or obese
+- Support metric and imperial calculations in the domain layer
+- Store the latest height, weight, BMI, ideal weight, and timestamp locally
+- Display previous measurement information
+- Navigate between home, history, diet lists, and profile screens
+- Schedule diet reminder notifications
 
-##Used Technologies
-1. Kotlin: Kotlin is used as the main programming language. Kotlin is a modern and flexible language that simplifies the Android application development process.
-2. Compose: Jetpack Compose was used to create the user interface. Compose is a declarative UI writing library and is used to create advanced and flexible user interfaces.
-3. Coroutines: Coroutines have been used to manage asynchronous operations and facilitate work in threads. It provides an effective and efficient method for managing asynchronous operations.
+## Architecture
 
-### Bug Reports and Feature Requests
-If you encounter any bugs or have a feature request, please create an issue in the repository.
+The current app is being incrementally separated into testable layers:
 
-### Code of Conduct
-This project adheres to the Contributor Covenant code of conduct. By participating, you are expected to uphold this code.
+```text
+app/src/main/java/com/enesakin/vkhesaplama/
+├── MainActivity.kt              # Compose navigation, UI, local preferences, notifications
+├── domain/
+│   └── BmiCalculator.kt         # Pure BMI formula, validation, result and category model
+└── ui/theme/                    # Compose theme definitions
+
+app/src/test/java/com/enesakin/vkhesaplama/domain/
+└── BmiCalculatorTest.kt         # JVM unit tests for the calculation domain
+```
+
+`BmiCalculator` is intentionally independent from Android and Compose. This keeps the calculation deterministic, reusable, and fast to test on the JVM.
+
+## Technology stack
+
+- Kotlin
+- Jetpack Compose and Material 3
+- Android Navigation Compose
+- AndroidX WorkManager
+- JUnit 4
+- Gradle 8.6
+- Android Gradle Plugin 8.4
+- GitHub Actions
+
+## Build and run
+
+### Requirements
+
+- JDK 17
+- Android Studio with Android SDK 34
+
+### Local verification
+
+```bash
+./gradlew testDebugUnitTest
+./gradlew lintDebug
+./gradlew assembleDebug
+```
+
+The generated debug APK is located at:
+
+```text
+app/build/outputs/apk/debug/app-debug.apk
+```
+
+### Android Studio
+
+1. Clone this repository.
+2. Open the project root in Android Studio.
+3. Allow Gradle sync to complete.
+4. Select an emulator or Android device running API 25 or newer.
+5. Run the `app` configuration.
+
+## Continuous integration
+
+`.github/workflows/android-ci.yml` runs automatically for pushes and pull requests targeting `main`.
+
+The pipeline:
+
+1. Configures Temurin JDK 17.
+2. Restores and caches Gradle dependencies.
+3. Runs JVM unit tests.
+4. Runs Android lint.
+5. Builds a debug APK.
+6. Uploads the APK as a 14-day workflow artifact for successful pushes.
+
+## Screenshots
+
+| Home | History | Diet lists | Profile |
+|---|---|---|---|
+| ![Home screen](homescreen.jpeg) | ![History screen](pastscreen.jpeg) | ![Diet lists](dietlists.jpeg) | ![Profile screen](profilescreen.jpeg) |
+
+## Calculation behavior
+
+Metric formula:
+
+```text
+BMI = weightKg / heightMeters²
+```
+
+Imperial formula:
+
+```text
+BMI = 703 × weightLb / heightInches²
+```
+
+Input ranges are validated before calculation to reject impossible or accidental zero values. Results are rounded to one decimal place.
+
+## Roadmap
+
+- Connect the Compose home screen directly to the new domain calculator
+- Replace the large activity file with screen, state, and data packages
+- Move local state to DataStore
+- Remove plain-text credential storage and introduce an appropriate authentication model
+- Add Compose UI tests and accessibility checks
+- Produce signed release builds through a protected release workflow
+
+## Privacy and health disclaimer
+
+BMI is a general screening metric and is not a medical diagnosis. The application should not replace guidance from a qualified healthcare professional.
+
+The current legacy profile implementation stores local form values on the device. Do not use a real password until the planned authentication and secure-storage refactor is complete.
+
+## License
+
+No open-source license has been selected yet. All rights are reserved until a license is added.
 
 ## Contact
-If you have any questions or feedback, feel free to reach out to me at enesakn16@gmail.com.
+
+Enes Akın — [GitHub profile](https://github.com/enesakn16)
