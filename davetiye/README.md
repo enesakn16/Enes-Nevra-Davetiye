@@ -7,4 +7,4 @@ Mobil öncelikli, animasyonlu tek sayfa düğün davetiyesi.
 - Mekân: Caziz Cafe Restaurant, Yenişehir Kampı Yolu, İznik / Bursa
 - Özellikler: zarf açılışı, kaydırma animasyonları, geri sayım, Google Maps konumu, takvime ekleme ve paylaşma
 
-Canlı bağlantı: https://raw.githack.com/enesakn16/Kotlin---BMI-Calculator-PRO/main/davetiye/index.html
+Canlı bağlantı: https://enesakn16.github.io/Kotlin---BMI-Calculator-PRO/
