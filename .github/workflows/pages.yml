@@ -29,16 +29,26 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Prepare public invitation
+        env:
+          REPOSITORY: ${{ github.repository }}
+          REPOSITORY_OWNER: ${{ github.repository_owner }}
         run: |
           python - <<'PY'
+          import os
+          import re
           from pathlib import Path
 
           path = Path("davetiye/index.html")
           html = path.read_text(encoding="utf-8")
 
-          html = html.replace(
-              "https://raw.githack.com/enesakn16/Kotlin---BMI-Calculator-PRO/main/davetiye/index.html",
-              "https://enesakn16.github.io/Kotlin---BMI-Calculator-PRO/"
+          repo_name = os.environ["REPOSITORY"].split("/", 1)[1]
+          owner = os.environ["REPOSITORY_OWNER"]
+          pages_url = f"https://{owner}.github.io/{repo_name}/"
+
+          html = re.sub(
+              r'<meta property="og:url" content="[^"]*" />',
+              f'<meta property="og:url" content="{pages_url}" />',
+              html
           )
 
           html = html.replace(
