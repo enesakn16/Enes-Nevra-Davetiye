@@ -26,14 +26,40 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Prepare public invitation
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path("davetiye/index.html")
+          html = path.read_text(encoding="utf-8")
+          html = html.replace(
+              'https://raw.githack.com/enesakn16/Kotlin---BMI-Calculator-PRO/main/davetiye/index.html',
+              'https://enesakn16.github.io/Kotlin---BMI-Calculator-PRO/'
+          )
+          html = html.replace(
+              '        <h2 class="section-heading reveal" id="familyTitle">Sevdiklerimizle</h2>\n',
+              ''
+          )
+          html = html.replace(
+              '<section class="section" aria-labelledby="familyTitle">',
+              '<section class="section" aria-label="Aileler">'
+          )
+          path.write_text(html, encoding="utf-8")
+          Path("davetiye/.nojekyll").touch()
+          PY
+
       - name: Setup Pages
         uses: actions/configure-pages@v5
         with:
           enablement: true
+
       - name: Upload invitation
         uses: actions/upload-pages-artifact@v3
         with:
           path: ./davetiye
+
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
