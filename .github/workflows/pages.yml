@@ -23,6 +23,7 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -34,18 +35,20 @@ jobs:
 
           path = Path("davetiye/index.html")
           html = path.read_text(encoding="utf-8")
+
           html = html.replace(
-              'https://raw.githack.com/enesakn16/Kotlin---BMI-Calculator-PRO/main/davetiye/index.html',
-              'https://enesakn16.github.io/Kotlin---BMI-Calculator-PRO/'
+              "https://raw.githack.com/enesakn16/Kotlin---BMI-Calculator-PRO/main/davetiye/index.html",
+              "https://enesakn16.github.io/Kotlin---BMI-Calculator-PRO/"
           )
+
           html = html.replace(
-              '        <h2 class="section-heading reveal" id="familyTitle">Sevdiklerimizle</h2>\n',
-              ''
+              '''      <section class="section" aria-labelledby="familyTitle">\n        <p class="section-kicker">Aileleri</p>\n        <h2 class="section-heading reveal" id="familyTitle">Sevdiklerimizle</h2>\n\n        <div class="family-grid">''',
+              '''      <section class="section" aria-label="Aileler">\n        <div class="family-grid">'''
           )
-          html = html.replace(
-              '<section class="section" aria-labelledby="familyTitle">',
-              '<section class="section" aria-label="Aileler">'
-          )
+
+          html = html.replace('            <p class="family-side">Nevra\'nın ailesi</p>\n', '')
+          html = html.replace('            <p class="family-side">Enes\'in ailesi</p>\n', '')
+
           path.write_text(html, encoding="utf-8")
           Path("davetiye/.nojekyll").touch()
           PY
