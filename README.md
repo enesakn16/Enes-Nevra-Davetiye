@@ -8,7 +8,9 @@ A Kotlin Android application for calculating Body Mass Index (BMI), classifying 
 
 - Kotlin + Jetpack Compose Android application
 - Metric and imperial BMI calculation domain model
-- Unit tests for formulas, category boundaries, and invalid input
+- Locale-tolerant metric form validation for comma and dot decimal separators
+- Field-specific errors for malformed and out-of-range values
+- JVM unit tests for formulas, category boundaries, parsing, and validation
 - Automatic GitHub Actions verification on every push and pull request
 - Debug APK generated as a workflow artifact after successful pushes
 
@@ -17,6 +19,8 @@ A Kotlin Android application for calculating Body Mass Index (BMI), classifying 
 - Calculate BMI from height and weight
 - Classify results as underweight, normal, overweight, or obese
 - Support metric and imperial calculations in the domain layer
+- Accept Turkish-style decimal input such as `75,5`
+- Reject blank, non-numeric, non-finite, and implausible values before calculation
 - Store the latest height, weight, BMI, ideal weight, and timestamp locally
 - Display previous measurement information
 - Navigate between home, history, diet lists, and profile screens
@@ -28,16 +32,32 @@ The current app is being incrementally separated into testable layers:
 
 ```text
 app/src/main/java/com/enesakin/vkhesaplama/
-├── MainActivity.kt              # Compose navigation, UI, local preferences, notifications
+├── MainActivity.kt                  # Compose navigation, UI, local preferences, notifications
 ├── domain/
-│   └── BmiCalculator.kt         # Pure BMI formula, validation, result and category model
-└── ui/theme/                    # Compose theme definitions
+│   ├── BmiCalculator.kt             # Pure BMI formula, range validation, result and category model
+│   └── BmiInputEvaluator.kt         # Text parsing and user-facing validation result model
+└── ui/theme/                        # Compose theme definitions
 
 app/src/test/java/com/enesakin/vkhesaplama/domain/
-└── BmiCalculatorTest.kt         # JVM unit tests for the calculation domain
+├── BmiCalculatorTest.kt             # Formula and category boundary tests
+└── BmiInputEvaluatorTest.kt         # Localized input and validation tests
 ```
 
-`BmiCalculator` is intentionally independent from Android and Compose. This keeps the calculation deterministic, reusable, and fast to test on the JVM.
+The domain package is intentionally independent from Android and Compose. This keeps calculation and form-validation behavior deterministic, reusable, and fast to test on the JVM.
+
+### Input flow
+
+```text
+Compose text fields
+        ↓
+BmiInputEvaluator
+        ↓
+BmiCalculator
+        ↓
+BmiResult or BmiInputError
+```
+
+`BmiInputEvaluator` normalizes comma decimals, trims whitespace, rejects `NaN` and infinity, and returns field-specific errors instead of throwing from the UI layer.
 
 ## Technology stack
 
@@ -112,11 +132,12 @@ Imperial formula:
 BMI = 703 × weightLb / heightInches²
 ```
 
-Input ranges are validated before calculation to reject impossible or accidental zero values. Results are rounded to one decimal place.
+Metric form values are accepted only when weight is between 20–500 kg and height is between 80–250 cm. Results are rounded to one decimal place.
 
 ## Roadmap
 
-- Connect the Compose home screen directly to the new domain calculator
+- Connect the Compose home screen directly to `BmiInputEvaluator`
+- Display localized field-specific validation messages in the UI
 - Replace the large activity file with screen, state, and data packages
 - Move local state to DataStore
 - Remove plain-text credential storage and introduce an appropriate authentication model
