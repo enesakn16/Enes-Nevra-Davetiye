@@ -7,9 +7,10 @@ A Kotlin Android application for calculating Body Mass Index (BMI), classifying 
 ## Current status
 
 - Kotlin + Jetpack Compose Android application
+- Compose home screen connected to the tested BMI domain pipeline
 - Metric and imperial BMI calculation domain model
 - Locale-tolerant metric form validation for comma and dot decimal separators
-- Field-specific errors for malformed and out-of-range values
+- Field-specific Turkish errors for malformed and out-of-range values
 - JVM unit tests for formulas, category boundaries, parsing, and validation
 - Automatic GitHub Actions verification on every push and pull request
 - Debug APK generated as a workflow artifact after successful pushes
@@ -32,10 +33,11 @@ The current app is being incrementally separated into testable layers:
 
 ```text
 app/src/main/java/com/enesakin/vkhesaplama/
-├── MainActivity.kt                  # Compose navigation, UI, local preferences, notifications
+├── MainActivity.kt                  # Compose navigation, local preferences, notifications
+├── Home.kt                          # BMI form state and presentation
 ├── domain/
 │   ├── BmiCalculator.kt             # Pure BMI formula, range validation, result and category model
-│   └── BmiInputEvaluator.kt         # Text parsing and user-facing validation result model
+│   └── BmiInputEvaluator.kt         # Text parsing and typed validation result model
 └── ui/theme/                        # Compose theme definitions
 
 app/src/test/java/com/enesakin/vkhesaplama/domain/
@@ -43,7 +45,7 @@ app/src/test/java/com/enesakin/vkhesaplama/domain/
 └── BmiInputEvaluatorTest.kt         # Localized input and validation tests
 ```
 
-The domain package is intentionally independent from Android and Compose. This keeps calculation and form-validation behavior deterministic, reusable, and fast to test on the JVM.
+The domain package is independent from Android and Compose. The UI delegates parsing, range checks, formula calculation, and classification to this package instead of duplicating business rules inside composables.
 
 ### Input flow
 
@@ -55,6 +57,8 @@ BmiInputEvaluator
 BmiCalculator
         ↓
 BmiResult or BmiInputError
+        ↓
+Result UI or Turkish validation message
 ```
 
 `BmiInputEvaluator` normalizes comma decimals, trims whitespace, rejects `NaN` and infinity, and returns field-specific errors instead of throwing from the UI layer.
@@ -136,11 +140,11 @@ Metric form values are accepted only when weight is between 20–500 kg and heig
 
 ## Roadmap
 
-- Connect the Compose home screen directly to `BmiInputEvaluator`
-- Display localized field-specific validation messages in the UI
+- Remove the obsolete duplicate `calculateBMI` UI helper
 - Replace the large activity file with screen, state, and data packages
 - Move local state to DataStore
 - Remove plain-text credential storage and introduce an appropriate authentication model
+- Implement Android 13+ notification permission correctly
 - Add Compose UI tests and accessibility checks
 - Produce signed release builds through a protected release workflow
 
@@ -152,7 +156,7 @@ The current legacy profile implementation stores local form values on the device
 
 ## License
 
-No open-source license has been selected yet. All rights are reserved until a license is added.
+Licensed under the MIT License. See [LICENSE](LICENSE).
 
 ## Contact
 
