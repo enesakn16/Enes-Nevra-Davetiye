@@ -50,6 +50,11 @@ fun Home(preferenceHelper: PreferenceHelper) {
     var gender by remember { mutableStateOf("") }
     var bmiResult by remember { mutableStateOf<BmiResult?>(null) }
 
+    fun clearResult() {
+        bmiResult = null
+        idealWeight = ""
+    }
+
     fun saveResult(result: BmiResult, calculatedIdealWeight: String) {
         preferenceHelper.saveBMI(result.value.toString())
         preferenceHelper.saveIdealWeight(calculatedIdealWeight)
@@ -96,7 +101,10 @@ fun Home(preferenceHelper: PreferenceHelper) {
                 ) {
                     SpecialText(string = "Boy")
                     Spacer(modifier = Modifier.padding(5.dp))
-                    SpecialTextField(string = height) { height = it }
+                    SpecialTextField(string = height) {
+                        height = it
+                        clearResult()
+                    }
                 }
 
                 Column(
@@ -107,7 +115,10 @@ fun Home(preferenceHelper: PreferenceHelper) {
                 ) {
                     SpecialText(string = "Kilo")
                     Spacer(modifier = Modifier.padding(5.dp))
-                    SpecialTextField1(string = weight) { weight = it }
+                    SpecialTextField1(string = weight) {
+                        weight = it
+                        clearResult()
+                    }
                 }
             }
 
@@ -122,7 +133,10 @@ fun Home(preferenceHelper: PreferenceHelper) {
                     gender = "Kadın",
                     iconId = R.drawable.kadin1,
                     isSelected = gender == "Kadın",
-                    onGenderSelected = { gender = "Kadın" },
+                    onGenderSelected = {
+                        gender = "Kadın"
+                        clearResult()
+                    },
                     modifier = Modifier
                         .weight(1f)
                         .padding(5.dp)
@@ -133,7 +147,10 @@ fun Home(preferenceHelper: PreferenceHelper) {
                     gender = "Erkek",
                     iconId = R.drawable.adam1,
                     isSelected = gender == "Erkek",
-                    onGenderSelected = { gender = "Erkek" },
+                    onGenderSelected = {
+                        gender = "Erkek"
+                        clearResult()
+                    },
                     modifier = Modifier
                         .weight(1f)
                         .padding(5.dp)
@@ -153,7 +170,7 @@ fun Home(preferenceHelper: PreferenceHelper) {
 
                     when (val evaluation = BmiInputEvaluator.evaluateMetric(weight, height)) {
                         is BmiEvaluation.Invalid -> {
-                            bmiResult = null
+                            clearResult()
                             Toast.makeText(
                                 context,
                                 errorMessage(evaluation.error),
