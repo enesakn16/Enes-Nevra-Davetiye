@@ -38,7 +38,12 @@ class PasswordVerifierTest {
     fun `rejects plaintext legacy values and malformed encodings`() {
         assertFalse(PasswordVerifier.isSecureEncoding("eski-duz-metin"))
         assertFalse(PasswordVerifier.verify("eski-duz-metin", "eski-duz-metin"))
-        assertFalse(PasswordVerifier.verify("password", "pbkdf2-sha1$not-a-number$00$00"))
+        assertFalse(
+            PasswordVerifier.verify(
+                "password",
+                "pbkdf2-sha1\$not-a-number\$00\$00",
+            ),
+        )
     }
 
     @Test(expected = IllegalArgumentException::class)
