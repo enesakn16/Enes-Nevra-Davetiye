@@ -290,8 +290,11 @@ class MainActivity : ComponentActivity() {
         val channelId = "channel_id"
         val channelName = "Channel Name"
         val importance = NotificationManager.IMPORTANCE_DEFAULT
-        val channel = NotificationChannel(channelId, channelName, importance)
-        notificationManager.createNotificationChannel(channel)
+        // Notification channels exist only on Android 8.0 (API 26) and newer.
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val channel = NotificationChannel(channelId, channelName, importance)
+            notificationManager.createNotificationChannel(channel)
+        }
 
         // Bildirim oluştur
         val notificationId = 1
