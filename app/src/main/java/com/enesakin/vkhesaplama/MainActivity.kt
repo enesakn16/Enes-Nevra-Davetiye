@@ -234,7 +234,7 @@ class MainActivity : ComponentActivity() {
                             allowNotifications()
                             showDialog1 = false // İzin verildikten sonra dialog kapat
                             // İzin verildikten sonra bu durumu sakla
-                            preferenceHelper.setNotificationPermissionGranted(false)
+                            preferenceHelper.setNotificationPermissionGranted(true)
                         },
                         onClose = {
                             showDialog1 = false
