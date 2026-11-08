@@ -1,5 +1,6 @@
 package com.enesakin.vkhesaplama
 
+import android.Manifest
 import android.annotation.SuppressLint
 import android.app.AlarmManager
 import android.app.NotificationChannel
@@ -16,6 +17,7 @@ import android.os.SystemClock
 import android.view.ContextThemeWrapper
 import android.widget.Toast
 import androidx.activity.ComponentActivity
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.BorderStroke
@@ -85,6 +87,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.ContextCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.navigation.compose.NavHost
@@ -210,6 +213,13 @@ class PreferenceHelper(context: Context) {
 }
 
 class MainActivity : ComponentActivity() {
+    private val notificationPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        PreferenceHelper(applicationContext).setNotificationPermissionGranted(granted)
+        if (granted) allowNotifications()
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -231,10 +241,15 @@ class MainActivity : ComponentActivity() {
                 } else if (showDialog1) {
                     NotificationPermissionDialog(
                         onPermissionGranted = {
-                            allowNotifications()
-                            showDialog1 = false // İzin verildikten sonra dialog kapat
-                            // İzin verildikten sonra bu durumu sakla
-                            preferenceHelper.setNotificationPermissionGranted(false)
+                            showDialog1 = false
+                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+                                ContextCompat.checkSelfPermission(this@MainActivity, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
+                            ) {
+                                notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                            } else {
+                                preferenceHelper.setNotificationPermissionGranted(true)
+                                allowNotifications()
+                            }
                         },
                         onClose = {
                             showDialog1 = false
@@ -275,8 +290,11 @@ class MainActivity : ComponentActivity() {
         val channelId = "channel_id"
         val channelName = "Channel Name"
         val importance = NotificationManager.IMPORTANCE_DEFAULT
-        val channel = NotificationChannel(channelId, channelName, importance)
-        notificationManager.createNotificationChannel(channel)
+        // Notification channels exist only on Android 8.0 (API 26) and newer.
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val channel = NotificationChannel(channelId, channelName, importance)
+            notificationManager.createNotificationChannel(channel)
+        }
 
         // Bildirim oluştur
         val notificationId = 1
@@ -286,9 +304,15 @@ class MainActivity : ComponentActivity() {
             .setContentText("Hey! Günlük diyetini takip ediyorsun değil mi?")
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
 
-        // Bildirimi gönder
-        with(NotificationManagerCompat.from(this)) {
-            notify(notificationId, builder.build())
+        // Android 13+ requires explicit runtime permission before posting.
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+            ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
+        ) return
+        try {
+            NotificationManagerCompat.from(this).notify(notificationId, builder.build())
+        } catch (_: SecurityException) {
+            // Permission can be revoked between checking and posting.
+            return
         }
 
         // AlarmManager kullanarak bildirim gönderimini planla (24 saatte bir)

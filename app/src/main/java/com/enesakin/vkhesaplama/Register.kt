@@ -1,6 +1,5 @@
 package com.enesakin.vkhesaplama
 
-import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -47,6 +46,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
+import com.enesakin.vkhesaplama.security.PasswordVerifier
 import com.enesakin.vkhesaplama.ui.theme.BlueGray
 import com.enesakin.vkhesaplama.ui.theme.VKİHesaplamaTheme
 
@@ -55,63 +55,7 @@ fun Register(preferenceHelper: PreferenceHelper, navController: NavController) {
     var adSoyad by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var sifre by remember { mutableStateOf("") }
-    var errorText by remember { mutableStateOf("") }
-
-    fun isAdSoyadValid(adSoyad: String): String? {
-        return if (adSoyad.isBlank()) {
-            "Ad Soyad Boş Olamaz."
-        } else {
-            null
-        }
-    }
-
-    fun isepostaValid(eposta: String): String? {
-        return if (eposta.isBlank()) {
-            "E-Posta Boş Olamaz."
-        } else {
-            null
-        }
-    }
-
-    fun isSifreValid(sifre: String): String? {
-        return if (sifre.isBlank()) {
-            "Şifre Boş Olamaz."
-        } else {
-            null
-        }
-    }
-
-    fun saveFullNameToDatabase(adSoyad: String) {
-        if (adSoyad.isNotEmpty()) {
-            preferenceHelper.saveAdSoyad(adSoyad)
-            Log.d("MainScreen", "AdSoyad saved to database: $adSoyad")
-        } else {
-            Log.d("MainScreen", "AdSoyad is empty, cannot save to database")
-        }
-    }
-
-    fun saveEmailToDatabase(email: String) {
-        if (email.isNotEmpty()) {
-            if (preferenceHelper.getEmail() == email) {
-                Log.d("MainScreen", "E-posta zaten kayıtlı: $email")
-                errorText = "Bu e-posta zaten sistemde kayıtlı."
-            } else {
-                preferenceHelper.saveEmail(email)
-                Log.d("MainScreen", "Email saved to database: $email")
-            }
-        } else {
-            Log.d("MainScreen", "Email is empty, cannot save to database")
-        }
-    }
-
-    fun savePasswordToDatabase(password: String) {
-        if (password.isNotEmpty()) {
-            preferenceHelper.savePassword(password)
-            Log.d("MainScreen", "Password saved to database: $password")
-        } else {
-            Log.d("MainScreen", "Password is empty, cannot save to database")
-        }
-    }
+    val context = LocalContext.current
 
     Surface {
         Column(modifier = Modifier.fillMaxSize()) {
@@ -141,31 +85,38 @@ fun Register(preferenceHelper: PreferenceHelper, navController: NavController) {
                 Spacer(modifier = Modifier.height(15.dp))
                 LoginTextField2(
                     label = "Şifre",
-                    trailing = "",
+                    trailing = "En az 8 karakter",
                     value = sifre,
                     onValueChange = { sifre = it },
                     modifier = Modifier.fillMaxWidth()
                 )
                 Spacer(modifier = Modifier.height(15.dp))
-                val context = LocalContext.current
                 Button(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(40.dp),
                     onClick = {
-                        if (adSoyad.isNotBlank() && email.isNotBlank() && sifre.isNotBlank()) {
-                            if (isEmailRegistered(email, preferenceHelper)) {
-                                // E-posta zaten kayıtlı ise kullanıcıyı uyar
-                                Toast.makeText(context, "Bu E-Posta adresi zaten kayıtlı.", Toast.LENGTH_SHORT).show()
-                            } else {
-                                // E-posta kayıtlı değilse kayıt işlemlerini gerçekleştir
-                                saveFullNameToDatabase(adSoyad)
-                                saveEmailToDatabase(email)
-                                savePasswordToDatabase(sifre)
+                        val normalizedEmail = email.trim().lowercase()
+                        when {
+                            adSoyad.isBlank() || normalizedEmail.isBlank() || sifre.isBlank() -> {
+                                Toast.makeText(context, "Tüm alanları doldur.", Toast.LENGTH_SHORT).show()
+                            }
+
+                            sifre.length < 8 -> {
+                                Toast.makeText(context, "Şifre en az 8 karakter olmalı.", Toast.LENGTH_SHORT).show()
+                            }
+
+                            isSecureProfileRegistered(normalizedEmail, preferenceHelper) -> {
+                                Toast.makeText(context, "Bu e-posta zaten kayıtlı.", Toast.LENGTH_SHORT).show()
+                            }
+
+                            else -> {
+                                preferenceHelper.saveAdSoyad(adSoyad.trim())
+                                preferenceHelper.saveEmail(normalizedEmail)
+                                preferenceHelper.savePassword(PasswordVerifier.create(sifre))
+                                sifre = ""
                                 navController.navigate("registeredprofilcontent")
                             }
-                        } else {
-                            Toast.makeText(context, "Tüm alanları doldurunuz.", Toast.LENGTH_SHORT).show()
                         }
                     },
                     colors = ButtonDefaults.buttonColors(
@@ -174,7 +125,10 @@ fun Register(preferenceHelper: PreferenceHelper, navController: NavController) {
                     ),
                     shape = RoundedCornerShape(size = 4.dp)
                 ) {
-                    Text(text = "Kayıt Ol", style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Medium))
+                    Text(
+                        text = "Kayıt Ol",
+                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Medium)
+                    )
                 }
                 Spacer(modifier = Modifier.height(15.dp))
                 ClickableLoginText(navController = navController)
@@ -183,9 +137,9 @@ fun Register(preferenceHelper: PreferenceHelper, navController: NavController) {
     }
 }
 
-fun isEmailRegistered(email: String, preferenceHelper: PreferenceHelper): Boolean {
-    val savedEmail = preferenceHelper.getEmail()
-    return savedEmail != null && savedEmail == email
+fun isSecureProfileRegistered(email: String, preferenceHelper: PreferenceHelper): Boolean {
+    return preferenceHelper.getEmail().equals(email, ignoreCase = true) &&
+        PasswordVerifier.isSecureEncoding(preferenceHelper.getPassword())
 }
 
 @Composable
@@ -221,7 +175,7 @@ fun ClickableLoginText(navController: NavController) {
 
 @Composable
 private fun TopSection1() {
-    val myColor5 = Color(0xFFF5F5F5)
+    val backgroundColor = Color(0xFFF5F5F5)
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -258,7 +212,7 @@ private fun TopSection1() {
                     )
                 }
             }
-            Spacer(modifier = Modifier.height(35.dp)) // Yeni eklenen Spacer
+            Spacer(modifier = Modifier.height(35.dp))
             Text(
                 modifier = Modifier.padding(bottom = 55.dp),
                 text = stringResource(id = R.string.login1),
@@ -269,11 +223,11 @@ private fun TopSection1() {
         Image(
             modifier = Modifier
                 .fillMaxWidth()
-                .align(Alignment.BottomCenter), // Image'ı en altta hizalamak için align eklenmiştir
+                .align(Alignment.BottomCenter),
             painter = painterResource(id = R.drawable.arc_3),
             contentDescription = null,
             contentScale = ContentScale.FillBounds,
-            colorFilter = ColorFilter.tint(myColor5) // Resmin rengi beyaz olacak
+            colorFilter = ColorFilter.tint(backgroundColor)
         )
     }
 }

@@ -46,6 +46,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
+import com.enesakin.vkhesaplama.security.PasswordVerifier
 import com.enesakin.vkhesaplama.ui.theme.BlueGray
 import com.enesakin.vkhesaplama.ui.theme.VKİHesaplamaTheme
 
@@ -53,7 +54,7 @@ import com.enesakin.vkhesaplama.ui.theme.VKİHesaplamaTheme
 fun Login(navController: NavController, preferenceHelper: PreferenceHelper) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
-    val errorText by remember { mutableStateOf("") }
+    val context = LocalContext.current
 
     Surface {
         Column(modifier = Modifier.fillMaxSize()) {
@@ -73,10 +74,9 @@ fun Login(navController: NavController, preferenceHelper: PreferenceHelper) {
                     modifier = Modifier.fillMaxWidth()
                 )
                 Spacer(modifier = Modifier.height(15.dp))
-                val context = LocalContext.current
                 LoginTextField2(
                     label = "Şifre",
-                    trailing = "Unuttum?",
+                    trailing = "",
                     value = password,
                     onValueChange = { password = it },
                     modifier = Modifier.fillMaxWidth()
@@ -87,14 +87,37 @@ fun Login(navController: NavController, preferenceHelper: PreferenceHelper) {
                         .fillMaxWidth()
                         .height(40.dp),
                     onClick = {
-                        if (email.isNotBlank() && password.isNotBlank()) {
-                            if (preferenceHelper.getEmail() == email && preferenceHelper.getPassword() == password) {
+                        val storedVerifier = preferenceHelper.getPassword()
+                        val normalizedEmail = email.trim().lowercase()
+
+                        when {
+                            normalizedEmail.isBlank() || password.isBlank() -> {
+                                Toast.makeText(
+                                    context,
+                                    "E-posta ve şifre alanları boş bırakılamaz.",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            }
+
+                            !PasswordVerifier.isSecureEncoding(storedVerifier) -> {
+                                password = ""
+                                Toast.makeText(
+                                    context,
+                                    "Eski profil güvenli değil. Üye Ol ekranından profili yeniden oluştur.",
+                                    Toast.LENGTH_LONG
+                                ).show()
+                            }
+
+                            preferenceHelper.getEmail().equals(normalizedEmail, ignoreCase = true) &&
+                                PasswordVerifier.verify(password, storedVerifier) -> {
+                                password = ""
                                 navController.navigate("registeredprofilcontent")
-                            } else {
+                            }
+
+                            else -> {
+                                password = ""
                                 Toast.makeText(context, "E-posta veya şifre hatalı.", Toast.LENGTH_SHORT).show()
                             }
-                        } else {
-                            Toast.makeText(context, "E-posta ve şifre alanları boş bırakılamaz.", Toast.LENGTH_SHORT).show()
                         }
                     },
                     colors = ButtonDefaults.buttonColors(
@@ -103,15 +126,12 @@ fun Login(navController: NavController, preferenceHelper: PreferenceHelper) {
                     ),
                     shape = RoundedCornerShape(size = 4.dp)
                 ) {
-                    Text(text = "Giriş Yap", style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Medium))
+                    Text(
+                        text = "Giriş Yap",
+                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Medium)
+                    )
                 }
                 Spacer(modifier = Modifier.height(15.dp))
-                Text(
-                    text = errorText,
-                    style = MaterialTheme.typography.bodyMedium.copy(color = Color.Red),
-                    modifier = Modifier.padding(start = 8.dp)
-                )
-                Spacer(modifier = Modifier.height(3.dp))
                 ClickableLoginText1(navController = navController)
             }
         }
@@ -129,7 +149,7 @@ fun ClickableLoginText1(navController: NavController) {
                 fontWeight = FontWeight.Medium
             )
         ) {
-            append("Henüz bir hesabınız yok mu?")
+            append("Henüz güvenli bir profilin yok mu?")
         }
         withStyle(
             style = SpanStyle(
@@ -151,7 +171,7 @@ fun ClickableLoginText1(navController: NavController) {
 
 @Composable
 private fun TopSection() {
-    val myColor5 = Color(0xFFF5F5F5)
+    val backgroundColor = Color(0xFFF5F5F5)
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -188,7 +208,7 @@ private fun TopSection() {
                     )
                 }
             }
-            Spacer(modifier = Modifier.height(35.dp)) // Yeni eklenen Spacer
+            Spacer(modifier = Modifier.height(35.dp))
             Text(
                 modifier = Modifier.padding(bottom = 55.dp),
                 text = stringResource(id = R.string.login),
@@ -199,11 +219,11 @@ private fun TopSection() {
         Image(
             modifier = Modifier
                 .fillMaxWidth()
-                .align(Alignment.BottomCenter), // Image'ı en altta hizalamak için align eklenmiştir
+                .align(Alignment.BottomCenter),
             painter = painterResource(id = R.drawable.arc_3),
             contentDescription = null,
             contentScale = ContentScale.FillBounds,
-            colorFilter = ColorFilter.tint(myColor5) // Resmin rengi beyaz olacak
+            colorFilter = ColorFilter.tint(backgroundColor)
         )
     }
 }
