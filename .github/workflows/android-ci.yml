@@ -44,7 +44,6 @@ jobs:
         run: ./gradlew assembleDebug --stacktrace
 
       - name: Upload debug APK
-        if: github.event_name == 'push'
         uses: actions/upload-artifact@v4
         with:
           name: bmi-calculator-debug-${{ github.sha }}
